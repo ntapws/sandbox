@@ -1,0 +1,66 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "variables": {
+        "apiVersion": "2017-08-15",
+        "location": "eastus",
+        "accountName": "tmedemo",
+        "poolName": "demoPool",
+        "volumeName": "demoVolume",
+        "creationToken": "amazing-file-path",
+    },
+    "resources": [
+        {
+            "name": "[variables('accountName')]",
+            "apiVersion": "[variables('apiVersion')]",
+            "type": "Microsoft.NetApp/netAppAccounts",
+            "location": "[variables('location')]",
+            "properties": {
+                "name": "[variables('accountName')]"
+            }
+        },
+        {
+            "name": "[concat(variables('accountName'), '/', variables('poolName'))]",
+            "apiVersion": "[variables('apiVersion')]",
+            "type": "Microsoft.NetApp/netAppAccounts/capacityPools",
+            "location": "eastus",
+            "properties": {
+                "name": "[variables('poolName')]",
+                "size": "4398046511104",
+                "serviceLevel": "Premium"
+            },
+            "dependsOn": [
+                "[concat('Microsoft.NetApp/netAppAccounts/', variables('accountName'))]"
+            ]
+        },
+        {
+            "name": "[concat(variables('accountName'), '/', variables('poolName'), '/', variables('volumeName'))]",
+            "apiVersion": "[variables('apiVersion')]",
+            "type": "Microsoft.NetApp/netAppAccounts/capacityPools/volumes",
+            "location": "eastus",
+            "properties": {
+                "name": "[variables('volumeName')]",
+                "creationToken": "[variables('creationToken')]",
+                "usageThreshold": "322122547200",
+                "serviceLevel": "Premium",
+            },
+            "dependsOn": [
+                "[concat('Microsoft.NetApp/netAppAccounts/', variables('accountName'), '/capacityPools/', variables('poolName'))]"
+            ]
+        }
+    ],
+    "outputs": {
+        "referenceOutput": {
+          "type": "object",
+          "value": "[reference(variables('volumeName'), variables('apiVersion'))]"
+        },
+        "mountTarget": {
+            "type": "string",
+            "value": "[concat('nfs://', reference(variables('volumeName'), variables('apiVersion')).mountTargets[0].ipAddress, '/', reference(variables('volumeName'), variables('apiVersion')).creationToken)]"
+        },
+        "mountCommand": {
+            "type": "string",
+            "value": "[concat('sudo mount -t nfs -o rw,hard,nointr,rsize=32768,wsize=32768,bg,nfsvers=3,tcp ', reference(variables('volumeName'), variables('apiVersion')).mountTargets[0].ipAddress, ':/', reference(variables('volumeName'), variables('apiVersion')).creationToken, ' ',  reference(variables('volumeName'), variables('apiVersion')).name)]"
+        }
+      }
+}
