@@ -1,0 +1,33 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "variables": {
+        "apiVersion": "2017-08-15",
+        "location": "eastus",
+        "accountName": "tmedemo",
+        "poolName": "demoPool",
+        "volumeName": "demoVolume02",
+        "creationToken": "amazing-file-path",
+    },
+    "resources": [
+  
+        {
+            "name": "[concat(variables('accountName'), '/', variables('poolName'), '/', variables('volumeName'))]",
+            "apiVersion": "[variables('apiVersion')]",
+            "type": "Microsoft.NetApp/netAppAccounts/capacityPools/volumes",
+            "location": "eastus",
+            "properties": {
+                "name": "[variables('volumeName')]",
+                "creationToken": "[variables('creationToken')]",
+                "usageThreshold": "322122547200",
+                "serviceLevel": "Premium",
+            },
+        }
+    ],
+    "outputs": {
+        "mountCommand": {
+            "type": "string",
+            "value": "[concat('sudo mount -t nfs -o rw,hard,nointr,rsize=32768,wsize=32768,bg,nfsvers=3,tcp ', reference(variables('volumeName'), variables('apiVersion')).mountTargets[0].ipAddress, ':/', reference(variables('volumeName'), variables('apiVersion')).creationToken, ' ',  reference(variables('volumeName'), variables('apiVersion')).name)]"
+        }
+      }
+}
